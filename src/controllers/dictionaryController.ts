@@ -37,8 +37,9 @@ export const generateWord = async ( req: Request, res: Response, next: NextFunct
         }
 
         const result = await Word.create(saveWord);
-
-        const userId: number = req.cookies.user.user.id;
+        
+        UserMap(database)
+        const userId: number = 1;
         const findUser = await User.findOne({ where: { id: userId } })
         await findUser?.increment('games', { by: 1 });
         
@@ -53,17 +54,20 @@ export const generateWord = async ( req: Request, res: Response, next: NextFunct
 export const validateWord = async (req: Request, res: Response, next: NextFunction) =>{
     try{
         const userWord : string = req.body.userWord.toUpperCase();
-        const validateWord: string = req.cookies.data.word.toUpperCase();
-        if(userWord === validateWord){ 
+        const validateWord: Word[] = await Word.findAll({
+            order: [ [ 'id', 'DESC' ]],
+            limit: 1
+        })
+        if(userWord === validateWord[0].word){ 
 
-            const userId: number = req.cookies.user.user.id;
+            const userId: number = 1;
             const findUser = await User.findOne({ where: { id: userId } })
             await findUser?.increment('victories', { by: 1 });
 
             await Word.update({isDiscovered: true},{
                 where: {
                     word:{
-                        [Op.eq]: validateWord
+                        [Op.eq]: validateWord[0].word
                     }
                 }
             })
@@ -71,13 +75,13 @@ export const validateWord = async (req: Request, res: Response, next: NextFuncti
             res.status(200).send({message: "Felicidades acertaste la palabra!!"});
         } else {
             let response:{letter: string, value: number}[] = [];
-            for (let i = 0; i < validateWord.length; i++) {
-                if(userWord.charAt(i) === validateWord.charAt(i)){
+            for (let i = 0; i < validateWord[0].word.length; i++) {
+                if(userWord.charAt(i) === validateWord[0].word.charAt(i)){
                     response.push({
                         letter: userWord.charAt(i),
                         value: 1
                     })
-                } else if (validateWord.indexOf(userWord.charAt(i)) !== -1) {
+                } else if (validateWord[0].word.indexOf(userWord.charAt(i)) !== -1) {
                     response.push({
                         letter: userWord.charAt(i),
                         value: 2
@@ -93,7 +97,7 @@ export const validateWord = async (req: Request, res: Response, next: NextFuncti
             const findWord = await Word.findOne({
                 where: {
                     word:{
-                        [Op.eq]: validateWord
+                        [Op.eq]: validateWord[0].word
                     }
                 }
             })
@@ -101,12 +105,12 @@ export const validateWord = async (req: Request, res: Response, next: NextFuncti
 
             if(incrementResult?.attemnts || 0 >= 5){
                 generateWord(req, res, next);
-                res.status(201).send({success: false, message: "se ha superado el numero maximo de intentos para adivinar la palabra!!"});
+                res.status(201).json({success: false, message: "se ha superado el numero maximo de intentos para adivinar la palabra!!"});
             }
-            res.status(200).send(response);
+            res.status(200).json(response);
         }
     } catch (error:any) {
-        res.status(500).send({ success: false, message: error.message })
+        res.status(500).json({ success: false, message: error.message })
     }
 }
 
@@ -117,7 +121,6 @@ export const getBestResults = async (req: Request, res: Response) => {
             where: {isDiscovered: true},
             order: [['attemnts', 'ASC']]
         })
-        console.log("bestResults", bestResults)
         res.status(200).json(bestResults)
     } catch(err:any){
         res.status(500).send({ success: false, message: err.message })

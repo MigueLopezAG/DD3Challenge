@@ -3,13 +3,11 @@ import express, { Request, Response } from "express";
 import dotenv from 'dotenv';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import {routerApi} from './routes'
-import cron from 'node-cron';
+import {routerApi} from './routes';
 import cookieParser from 'cookie-parser';
-import { generateWord } from './controllers/dictionaryController';
 
 dotenv.config();
-const app = express(); 
+export const app = express(); 
 
 const port = 3001;
 app.use(bodyParser.json());
@@ -19,7 +17,7 @@ app.use(express.json());
 
 app.use(cookieParser());
 
-cron.schedule('*/5 * * * *', () => generateWord)
+// cron.schedule('*/5 * * * *', () => generateWord)
 
 routerApi(app);
  

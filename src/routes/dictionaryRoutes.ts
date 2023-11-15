@@ -2,6 +2,7 @@ import express from 'express'
 import {generateWord, getBestResults, validateWord} from '../controllers/dictionaryController'
 import { verifyToken } from '../middleware/authjwt';
 export const dictionaryRouter = express.Router();
+import cron from 'node-cron';
 
 dictionaryRouter.use(function(req, res, next) {
     res.header(
@@ -10,7 +11,6 @@ dictionaryRouter.use(function(req, res, next) {
     );
     next();
 });
-
 
 dictionaryRouter.get('/', verifyToken, generateWord)
 dictionaryRouter.post('/validate-word', verifyToken,validateWord)
